@@ -376,11 +376,69 @@ const Admin = () => {
           )}
 
           {/* PLACEHOLDERS for other tabs... */}
-          {(activeTab === 'inventory' || activeTab === 'fulfillment') && (
+          {activeTab === 'inventory' && (
+            <div className="p-12 animate-in fade-in slide-in-from-right-5">
+               <div className="flex justify-between items-end mb-10 pb-8 border-b border-slate-100">
+                  <div>
+                    <h2 className="text-3xl font-black text-[#15342C] font-['Outfit'] mb-1">Inventory Control</h2>
+                    <p className="text-slate-400 text-sm font-medium">Add, Edit, and Manage stock levels in real-time.</p>
+                  </div>
+                  <button onClick={() => handleAction('Add Medicine Modal Opened')} className="bg-[#15342C] text-[#F4A522] px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-2 hover:scale-105 transition-all">
+                    <span>+</span> Add New Medicine
+                  </button>
+               </div>
+
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left">
+                   <thead>
+                     <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                       <th className="pb-4">Medicine Details</th>
+                       <th className="pb-4">Composition</th>
+                       <th className="pb-4">In Stock</th>
+                       <th className="pb-4">Price</th>
+                       <th className="pb-4 text-right">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-50">
+                     {[
+                       { name: 'Dolo 650', salt: 'Paracetamol', stock: 120, price: '₹26.00', low: false },
+                       { name: 'Augmentin 625', salt: 'Amoxycillin', stock: 18, price: '₹182.00', low: true },
+                       { name: 'Pantocid 40', salt: 'Pantoprazole', stock: 240, price: '₹145.00', low: false },
+                       { name: 'Glycomet GP1', salt: 'Metformin', stock: 5, price: '₹95.00', low: true },
+                       { name: 'Shelcal 500', salt: 'Calcium + Vit D3', stock: 85, price: '₹110.00', low: false },
+                     ].map((m, i) => (
+                       <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                         <td className="py-6">
+                            <p className="font-black text-[#15342C] text-sm font-['Outfit']">{m.name}</p>
+                            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">BATCH #2204-KL</p>
+                         </td>
+                         <td className="py-6">
+                            <span className="text-[10px] bg-violet-50 text-violet-600 px-3 py-1 rounded-lg font-bold">{m.salt}</span>
+                         </td>
+                         <td className="py-6">
+                            <div className="flex items-center gap-2">
+                               <p className={`font-black text-sm ${m.low ? 'text-rose-500' : 'text-slate-700'}`}>{m.stock}</p>
+                               {m.low && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />}
+                            </div>
+                         </td>
+                         <td className="py-6 font-bold text-[#15342C] text-sm">{m.price}</td>
+                         <td className="py-6 text-right space-x-3">
+                            <button onClick={() => handleAction(`Edit ${m.name}`)} className="text-[10px] font-black text-slate-400 uppercase hover:text-[#15342C]">Edit</button>
+                            <button onClick={() => handleAction(`Deleted ${m.name}`)} className="text-[10px] font-black text-rose-300 uppercase hover:text-rose-600">Delete</button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          )}
+
+          {activeTab === 'fulfillment' && (
             <div className="p-12 text-center py-20 bg-slate-50/50">
-               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl mx-auto mb-6 shadow-sm">⚙️</div>
-               <h3 className="text-2xl font-black text-[#15342C] font-['Outfit']">Management Module Active</h3>
-               <p className="text-slate-400 text-sm mt-2">Inventory and fulfillment logs are syncing with central PharmaZone database.</p>
+               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl mx-auto mb-6 shadow-sm">🚀</div>
+               <h3 className="text-2xl font-black text-[#15342C] font-['Outfit']">Fulfillment Center</h3>
+               <p className="text-slate-400 text-sm mt-2">Logistics and delivery tracking is active for current region.</p>
             </div>
           )}
 
