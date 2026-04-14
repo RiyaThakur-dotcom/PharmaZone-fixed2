@@ -30,24 +30,72 @@ const localSearch = (q) => {
 };
 
 const MedicineCard = ({ med }) => {
+  const navigate = useNavigate();
   const prices = med.platformPrices || [];
   const sorted = [...prices].sort((a, b) => a.price - b.price);
   const cheapest = sorted[0];
 
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Actual Cart Logic
+    let cart = [];
+    try {
+      cart = JSON.parse(localStorage.getItem('pharmazone_cart')) || [];
+    } catch (err) { cart = []; }
+    if (!Array.isArray(cart)) cart = [];
+
+    const price = cheapest?.price || med.price;
+    const platform = cheapest?.platformName || 'PharmaZone Direct';
+
+    const existingIndex = cart.findIndex(item => item.id === med.id && item.platform === platform);
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += 1;
+    } else {
+      cart.push({
+        id: med.id,
+        name: med.name,
+        genericName: med.genericName || med.salt,
+        price,
+        platform,
+        quantity: 1,
+        requiresPrescription: med.requiresPrescription
+      });
+    }
+
+    localStorage.setItem('pharmazone_cart', JSON.stringify(cart));
+    // Dispatch event to update Navbar count if needed
+    window.dispatchEvent(new Event('cartUpdated'));
+
+    // Visual Feedback
+    const btn = e.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✔ Added';
+    btn.classList.add('bg-emerald-600', 'text-white');
+    btn.classList.remove('bg-[#15342C]', 'text-white');
+    
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.classList.remove('bg-emerald-600', 'text-white');
+      btn.classList.add('bg-[#15342C]', 'text-white');
+    }, 1500);
+  };
+
   return (
-    <Link to={`/medicine/${med.id}`}
-      className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 group flex flex-col gap-3"
+    <div 
+      onClick={() => navigate(`/medicine/${med.id}`)}
+      className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-xl hover:border-[#F4A522]/30 transition-all duration-300 group flex flex-col gap-3 cursor-pointer relative"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="font-black text-slate-800 font-['Outfit'] text-base leading-tight">{med.name}</h3>
+            <h3 className="font-black text-slate-800 font-['Outfit'] text-base leading-tight group-hover:text-[#15342C] transition-colors">{med.name}</h3>
             {med.requiresPrescription && (
               <span className="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full uppercase flex-shrink-0">Rx</span>
             )}
           </div>
           <p className="text-xs text-slate-500 truncate">{med.genericName}</p>
-          {/* Salt Analysis */}
           {med.salt && (
             <p className="text-[11px] text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md mt-1 truncate font-medium">
               🧪 {med.salt}
@@ -58,6 +106,11 @@ const MedicineCard = ({ med }) => {
           <p className="text-lg font-black text-[#15342C]">₹{cheapest?.price || med.price}</p>
           {cheapest?.mrp && cheapest.mrp > cheapest.price && (
             <p className="text-xs text-slate-400 line-through">₹{cheapest.mrp}</p>
+          )}
+          {med.salt && (
+            <div className="mt-1 flex items-center justify-end">
+               <span className="text-[8px] font-black bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md uppercase animate-pulse">Save 60%</span>
+            </div>
           )}
         </div>
       </div>
@@ -83,15 +136,29 @@ const MedicineCard = ({ med }) => {
               {p.platformName?.replace('Apollo Pharmacy','Apollo').replace('Tata 1mg','1mg')} ₹{p.price}
             </span>
           ))}
-          {sorted.length > 3 && <span className="text-[10px] text-slate-400 font-medium self-center">+{sorted.length - 3} more</span>}
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-1 border-t border-slate-50">
-        <span className="text-xs text-slate-400">{prices.length} platform{prices.length !== 1 ? 's' : ''}</span>
-        <span className="text-xs text-[#F4A522] font-bold group-hover:translate-x-1 transition-transform">Compare prices →</span>
+      <div className="flex items-center gap-2 pt-3 border-t border-slate-50">
+        <button 
+          onClick={handleAddToCart}
+          className="flex-1 bg-[#15342C] text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#F4A522] hover:text-[#15342C] transition-all flex items-center justify-center gap-2"
+        >
+          Add to Cart <span className="text-base leading-none">+</span>
+        </button>
+        {med.salt && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); navigate(`/medicine/${med.id}`); }}
+            className="flex-1 bg-emerald-50 text-emerald-700 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-all border border-emerald-100"
+          >
+            Find Alt 🧪
+          </button>
+        )}
+        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#F4A522]/10 group-hover:text-[#F4A522] transition-colors">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+        </div>
       </div>
-    </Link>
+    </div>
   );
 };
 

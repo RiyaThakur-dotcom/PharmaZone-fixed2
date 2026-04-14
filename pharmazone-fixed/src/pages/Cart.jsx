@@ -300,6 +300,30 @@ const Cart = () => {
   };
 
   const handleOrderSuccess = () => {
+    // Save to Local Orders for Tracking Visibility
+    let orders = [];
+    try {
+      orders = JSON.parse(localStorage.getItem('pharmazone_orders')) || [];
+    } catch { orders = []; }
+    if (!Array.isArray(orders)) orders = [];
+
+    const newOrder = {
+      id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
+      orderNumber: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
+      date: new Date().toISOString().split('T')[0],
+      totalAmount: (total * 1.12).toFixed(2),
+      status: hasRxItems ? 'PENDING_RX' : 'CONFIRMED',
+      items: safeCart.map(i => ({
+        medicineName: i.name,
+        platform: i.platform,
+        price: i.price,
+        quantity: i.quantity
+      }))
+    };
+
+    orders.unshift(newOrder); // Newest first
+    localStorage.setItem('pharmazone_orders', JSON.stringify(orders));
+
     setShowRxModal(false);
     setOrderSuccess(true);
     setCartItems([]);
@@ -399,13 +423,19 @@ const Cart = () => {
               <h3 className="text-xl font-black text-[#15342C] font-['Outfit'] mb-6">Order Summary</h3>
 
               <div className="space-y-3 text-sm font-medium text-slate-500 border-b border-slate-100 pb-5 mb-5 font-['Inter']">
-                <div className="flex justify-between"><span>{safeCart.length} item(s)</span><span className="font-bold text-[#15342C]">₹{total}</span></div>
-                <div className="flex justify-between"><span>Delivery</span><span className="text-emerald-500 font-bold uppercase text-xs tracking-widest">Free</span></div>
+                <div className="flex justify-between"><span>Subtotal ({safeCart.length} items)</span><span className="font-bold text-[#15342C]">₹{total.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>GST (12%)</span><span className="font-bold text-[#15342C]">₹{(total * 0.12).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Delivery Fee</span><span className="text-emerald-500 font-bold uppercase text-[10px] tracking-widest bg-emerald-50 px-2 py-0.5 rounded">Free</span></div>
               </div>
 
               <div className="flex justify-between items-end mb-6 font-['Outfit']">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
-                <span className="text-4xl font-black text-[#15342C]">₹{total}</span>
+                <div>
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Total Payable</p>
+                  <span className="text-4xl font-black text-[#15342C]">₹{(total * 1.12).toFixed(2)}</span>
+                </div>
+                <div className="text-right pb-1">
+                   <p className="text-[10px] font-black text-emerald-500 uppercase">Saving ₹{Math.floor(total * 0.4)}</p>
+                </div>
               </div>
 
               {/* Rx Warning */}
@@ -432,7 +462,7 @@ const Cart = () => {
 
               {!user && (
                 <p className="text-center text-xs text-slate-400 mt-4 font-medium">
-                  <Link to="/login" className="text-[#15342C] font-bold underline">Sign in</Link> to place your order
+                  <Link to="/login" state={{ from: { pathname: '/cart' } }} className="text-[#15342C] font-bold underline">Sign in</Link> to place your order
                 </p>
               )}
             </div>

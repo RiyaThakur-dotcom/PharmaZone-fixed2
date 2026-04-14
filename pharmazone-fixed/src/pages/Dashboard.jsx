@@ -55,9 +55,9 @@ const Dashboard = () => {
         <div className="max-w-5xl mx-auto">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-emerald-300/70 text-sm font-medium font-['Outfit'] uppercase tracking-widest mb-1">Welcome back</p>
+              <p className="text-emerald-300/70 text-sm font-medium font-['Outfit'] uppercase tracking-widest mb-1">Health Hub</p>
               <h1 className="text-3xl md:text-4xl font-black text-white font-['Outfit'] tracking-tight">
-                {user?.fullName || 'User'} 👋
+                {user?.fullName || 'User'} Dashboard 👋
               </h1>
               <p className="text-white/50 text-sm mt-1.5">{user?.email} · <span className="text-[#F4A522] font-bold">{user?.role || 'CUSTOMER'}</span></p>
             </div>
@@ -147,35 +147,72 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Orders */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-black text-slate-800 font-['Outfit']">Recent Orders</h3>
-            <Link to="/orders" className="text-sm text-[#F4A522] font-bold hover:underline">View All →</Link>
+        {/* Health Hub: Orders & Prescriptions */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Active Orders */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-black text-slate-800 font-['Outfit'] flex items-center gap-2">
+                <span className="text-xl">📦</span> Active Orders
+              </h3>
+              <Link to="/orders" className="text-[10px] font-black uppercase text-[#F4A522] tracking-widest">View History</Link>
+            </div>
+            <div className="flex-1">
+              {recentOrders.length > 0 ? (
+                <div className="space-y-3">
+                  {recentOrders.map(order => (
+                    <div key={order.orderNumber} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <p className="text-xs font-black text-slate-800">{order.orderNumber}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{order.status}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-black text-[#15342C]">₹{order.totalAmount}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 opacity-40">
+                  <p className="text-3xl mb-1">🛒</p>
+                  <p className="text-xs font-bold uppercase tracking-widest">No Active Orders</p>
+                </div>
+              )}
+            </div>
+            <Link to="/search" className="mt-6 w-full text-center py-3 bg-[#15342C] text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-[#F4A522] hover:text-[#15342C] transition-all">
+              New Order
+            </Link>
           </div>
-          {recentOrders.length > 0 ? (
-            <div className="space-y-3">
-              {recentOrders.map(order => (
-                <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">#{order.orderNumber || order.id}</p>
-                    <p className="text-xs text-slate-500">₹{order.totalAmount}</p>
+
+          {/* Medical Vault (Prescriptions) */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-black text-slate-800 font-['Outfit'] flex items-center gap-2">
+                <span className="text-xl">📋</span> Medical Vault
+              </h3>
+              <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-2 py-1 rounded-full">SECURE</span>
+            </div>
+            <div className="flex-1 space-y-3">
+              {[
+                { name: 'Dr. Gupta - Aug 2024', date: '28/08/2024', color: 'bg-emerald-50' },
+                { name: 'Consultation - July', date: '12/07/2024', color: 'bg-indigo-50' }
+              ].map((rx, i) => (
+                <div key={i} className={`flex items-center justify-between p-3 ${rx.color} rounded-xl border border-white/50 group cursor-pointer hover:shadow-sm transition-all`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">📄</span>
+                    <div>
+                      <p className="text-xs font-bold text-[#15342C]">{rx.name}</p>
+                      <p className="text-[10px] text-[#15342C]/40 uppercase font-black">{rx.date}</p>
+                    </div>
                   </div>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                    order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' :
-                    order.status === 'CANCELLED' ? 'bg-rose-100 text-rose-700' :
-                    'bg-amber-100 text-amber-700'
-                  }`}>{order.status}</span>
+                  <button className="text-[#15342C] hover:text-[#F4A522] transition-colors"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-4xl mb-3">📦</p>
-              <p className="text-slate-500 text-sm">No orders yet</p>
-              <Link to="/search" className="mt-3 inline-block text-sm text-[#F4A522] font-bold hover:underline">Search medicines →</Link>
-            </div>
-          )}
+            <button className="mt-6 w-full text-center py-3 border-2 border-[#15342C] text-[#15342C] text-xs font-black uppercase tracking-widest rounded-xl hover:bg-[#15342C] hover:text-white transition-all">
+              Upload New Rx
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -10,6 +10,7 @@ export const MEDICINES_DB = [
     price: 30, category: "Pain Relief", requiresPrescription: false,
     manufacturer: "Micro Labs", uses: "Fever, Headache, Body Pain",
     sideEffects: "Nausea, Liver damage (overdose)",
+    tabletCount: "15 Tablets",
     platformPrices: [
       { platformName: "PharmEasy",      price: 28, mrp: 30, isCheapest: false, url: "#" },
       { platformName: "Tata 1mg",       price: 26, mrp: 30, isCheapest: true,  url: "#" },
@@ -24,6 +25,7 @@ export const MEDICINES_DB = [
     price: 15, category: "Pain Relief", requiresPrescription: false,
     manufacturer: "GSK", uses: "Mild fever, Headache",
     sideEffects: "Allergic reactions (rare)",
+    tabletCount: "10 Tablets",
     platformPrices: [
       { platformName: "PharmEasy",      price: 14, mrp: 15, isCheapest: true,  url: "#" },
       { platformName: "Tata 1mg",       price: 15, mrp: 15, isCheapest: false, url: "#" },
@@ -93,6 +95,7 @@ export const MEDICINES_DB = [
     price: 201, category: "Antibiotics", requiresPrescription: true,
     manufacturer: "GSK", uses: "Bacterial infections, Sinusitis, Pneumonia",
     sideEffects: "Diarrhea, Skin rash, Nausea",
+    tabletCount: "10 Tablets (vial/strip)",
     platformPrices: [
       { platformName: "PharmEasy",      price: 192, mrp: 201, isCheapest: false, url: "#" },
       { platformName: "Tata 1mg",       price: 185, mrp: 201, isCheapest: true,  url: "#" },
@@ -133,6 +136,7 @@ export const MEDICINES_DB = [
     price: 88, category: "Cardiac Care", requiresPrescription: true,
     manufacturer: "Glenmark", uses: "Hypertension, Heart failure prevention",
     sideEffects: "Dizziness, Low BP, Hyperkalemia",
+    tabletCount: "15 Tablets",
     platformPrices: [
       { platformName: "PharmEasy",      price: 84, mrp: 88, isCheapest: false, url: "#" },
       { platformName: "Tata 1mg",       price: 80, mrp: 88, isCheapest: true,  url: "#" },
@@ -174,6 +178,7 @@ export const MEDICINES_DB = [
     price: 30, category: "Diabetes", requiresPrescription: true,
     manufacturer: "USV Pharma", uses: "Type 2 Diabetes management",
     sideEffects: "Nausea, Diarrhea, Lactic acidosis (rare)",
+    tabletCount: "20 Tablets",
     platformPrices: [
       { platformName: "PharmEasy",      price: 28, mrp: 30, isCheapest: false, url: "#" },
       { platformName: "Tata 1mg",       price: 25, mrp: 30, isCheapest: true,  url: "#" },

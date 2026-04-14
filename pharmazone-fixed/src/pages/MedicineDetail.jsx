@@ -253,8 +253,15 @@ const MedicineDetail = () => {
                 {medicine.manufacturer&&<span className="bg-white/10 text-white/70 border border-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">{medicine.manufacturer}</span>}
               </div>
               <h1 className="text-5xl md:text-6xl font-black font-[\'Outfit\'] mb-3 leading-tight">{medicine.name}</h1>
-              <p className="text-[#F4A522] text-lg font-bold mb-2">{medicine.salt||medicine.saltComposition}</p>
-              {medicine.uses&&<p className="text-emerald-100/60 text-sm mb-8"><span className="font-bold text-white/80">Uses:</span> {medicine.uses}</p>}
+              <div className="flex items-center gap-4 mb-4">
+                <p className="text-[#F4A522] text-lg font-bold">{medicine.salt||medicine.saltComposition}</p>
+                {medicine.tabletCount && (
+                  <span className="bg-white/10 text-white/50 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border border-white/10">
+                    {medicine.tabletCount}
+                  </span>
+                )}
+              </div>
+              {medicine.uses&&<p className="text-emerald-100/60 text-sm mb-8"><span className="font-bold text-white/80">Primary Use:</span> {medicine.uses}</p>}
               <div className="flex items-end gap-6 mb-8">
                 <div><p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">MRP</p><p className="text-3xl font-black font-[\'Outfit\'] line-through text-white/40">₹{medicine.price}</p></div>
                 {cheapest&&<div><p className="text-[#F4A522] text-xs font-bold uppercase tracking-widest mb-1">Best on {cheapest.platformName}</p><p className="text-6xl font-black font-[\'Outfit\'] text-white">₹{cheapest.price}</p></div>}
@@ -283,8 +290,11 @@ const MedicineDetail = () => {
                     </div>
                   ))}
                 </div>
-                {medicine.saltAnalysis&&<div className="mt-6 pt-6 border-t border-white/10"><p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-2">🧪 Salt Analysis</p><p className="text-white/60 text-sm leading-relaxed">{medicine.saltAnalysis}</p></div>}
-                {medicine.sideEffects&&<div className="mt-6 pt-6 border-t border-white/10"><p className="text-xs font-black uppercase tracking-widest text-rose-400 mb-2">⚠️ Side Effects</p><p className="text-white/60 text-sm leading-relaxed">{medicine.sideEffects}</p></div>}
+                {medicine.saltAnalysis&&<div className="mt-6 pt-6 border-t border-white/10"><p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-2">🧪 Detailed Analysis</p><p className="text-white/60 text-sm leading-relaxed">{medicine.saltAnalysis}</p></div>}
+                {medicine.sideEffects&&<div className="mt-6 pt-6 border-t border-white/10"><p className="text-xs font-black uppercase tracking-widest text-rose-400 mb-2">⚠️ Safety Advice</p><p className="text-white/60 text-sm leading-relaxed">{medicine.sideEffects}. Consult doctor immediately if symptoms persist.</p></div>}
+                <div className="mt-6 pt-6 border-t border-white/10 text-[10px] text-white/30 italic">
+                  *Unit price shown per {medicine.tabletCount || 'strip'}. Data last updated today 6:00 AM.
+                </div>
               </div>
             </div>
           </div>
@@ -294,14 +304,14 @@ const MedicineDetail = () => {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 -mt-20 relative z-20 mb-16">
-        <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-100 p-8 md:p-12">
+      <section className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-8 -mt-20 relative z-20 mb-16">
+        <div className="lg:col-span-2 bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-100 p-8 md:p-12 h-fit">
           <div className="flex items-center justify-between gap-4 mb-10 border-b border-slate-100 pb-6 flex-wrap">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
                 <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
               </div>
-              <div><h2 className="text-2xl font-black text-[#15342C] font-[\'Outfit\']">Price Comparison</h2><p className="text-slate-400 text-sm">Cheapest first · Order directly without leaving PharmaZone</p></div>
+              <div><h2 className="text-2xl font-black text-[#15342C] font-[\'Outfit\']">Price Comparison</h2><p className="text-slate-400 text-sm">Cheapest first · Unit: {medicine.tabletCount || '1 Strip'}</p></div>
             </div>
             <span className={`text-xs font-black px-3 py-1.5 rounded-full border ${srcBadge[priceSource].cls}`}>{srcBadge[priceSource].label}</span>
           </div>
@@ -340,6 +350,42 @@ const MedicineDetail = () => {
               </div>}
             </>
           )}
+        </div>
+
+        {/* Sidebar Info */}
+        <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-100 p-8 h-fit">
+          <h3 className="text-lg font-black text-[#15342C] font-[\'Outfit\'] mb-6 flex items-center gap-2">
+            <span className="text-emerald-500">ℹ️</span> Vital Information
+          </h3>
+          <div className="space-y-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#F4A522] mb-2">How it works</p>
+              <p className="text-slate-500 text-sm leading-relaxed">{medicine.saltAnalysis || "Take exactly as directed by your physician. Do not crush or chew tablets unless advised."}</p>
+            </div>
+            <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
+              <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-2">Safety Warning</p>
+              <p className="text-rose-800 text-xs leading-relaxed font-semibold">Alcohol consumption is highly unsafe while taking this medicine. May cause dizziness.</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#15342C] mb-4">Common FAQs</p>
+              <div className="space-y-4">
+                <details className="group border-b border-slate-100 pb-3">
+                  <summary className="list-none text-xs font-bold text-slate-700 cursor-pointer flex justify-between items-center group-open:text-[#F4A522]">
+                    Is it safe during pregnancy?
+                    <span className="group-open:rotate-180 transition-transform">↓</span>
+                  </summary>
+                  <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Please consult your doctor. Studies show potential risk, medical supervision is required.</p>
+                </details>
+                <details className="group border-b border-slate-100 pb-3">
+                  <summary className="list-none text-xs font-bold text-slate-700 cursor-pointer flex justify-between items-center group-open:text-[#F4A522]">
+                    What if I miss a dose?
+                    <span className="group-open:rotate-180 transition-transform">↓</span>
+                  </summary>
+                  <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Take it as soon as possible. If it\'s time for next dose, skip the missed one. Do not double dose.</p>
+                </details>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

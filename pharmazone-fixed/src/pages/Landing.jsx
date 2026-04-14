@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import PriceRadar from '../components/PriceRadar';
+import BudgetCalculator from '../components/BudgetCalculator';
 import { jsPDF } from "jspdf";
 
 /* ─── STATS COUNTER HOOK ─── */
@@ -107,7 +108,10 @@ const HOW_STEPS = [
 const TESTIMONIALS = [
   { name: 'Priya Sharma', city: 'Mumbai', save: '₹1,840', text: 'Mujhe pata hi nahi tha ki same medicine itni sasti bhi milti hai! Thyronorm generic pe switch kiya — ₹180 se ₹22 per strip.', avatar: 'PS', color: 'bg-emerald-600' },
   { name: 'Rajesh Agarwal', city: 'Jaipur', save: '₹3,200', text: 'Diabetes medicines pe poore family ka ₹3,200 mahine ka bachaa. PharmaZone ne sach mein health affordable bana diya!', avatar: 'RA', color: 'bg-[#F4A522]' },
-  { name: 'Dr. Anita Menon', city: 'Bengaluru', save: '—', text: 'As a doctor, I now recommend PharmaZone to all patients. The generic suggestions are medically accurate and transparent.', avatar: 'AM', color: 'bg-violet-600' },
+  { name: 'Dr. Anita Menon', city: 'Bengaluru', save: 'Verified', text: 'As a doctor, I now recommend PharmaZone to all patients. The generic suggestions are medically accurate and transparent.', avatar: 'AM', color: 'bg-violet-600' },
+  { name: 'Vikram Singh', city: 'New Delhi', save: '₹2,100', text: 'Prescription upload feature is magic. Just clicked a photo and it added all medicines to cart with cheapest prices!', avatar: 'VS', color: 'bg-indigo-600' },
+  { name: 'Sonal Verma', city: 'Pune', save: '₹4,500', text: 'The AI PharaFriend suggested a generic salt for my knee pain medicine. Same result, but 70% cheaper than the branded version.', avatar: 'SV', color: 'bg-rose-500' },
+  { name: 'Manish Gupta', city: 'Lucknow', save: '₹950', text: 'Very impressive UI and fast search. Life-saver for chronic medication users who want to save money monthly.', avatar: 'MG', color: 'bg-blue-500' },
 ];
 
 /* ─── FEATURE TILES ─── */
@@ -115,7 +119,7 @@ const FEATURES = [
   { icon: '🔍', title: 'Real-Time Prices', desc: 'Live data from 5+ platforms, updated every 6 hours.', bg: 'bg-amber-50', border: 'border-amber-200' },
   { icon: '🤖', title: 'AI Substitutes', desc: 'Same molecule, fraction of the price. Verified by doctors.', bg: 'bg-violet-50', border: 'border-violet-200' },
   { icon: '📄', title: 'Rx Scanner', desc: 'Upload your prescription — AI extracts every medicine automatically.', bg: 'bg-blue-50', border: 'border-blue-200' },
-  { icon: '💬', title: 'PharaFriend AI', desc: '24/7 health chatbot. Ask anything in Hindi or English.', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  { icon: '⚖️', title: 'Budget Calculator', desc: 'Calculate how many tablets you get for ₹200.', bg: 'bg-emerald-50', border: 'border-emerald-200' },
   { icon: '🏥', title: 'Doctor Consult', desc: 'Online consultation, digital prescription in minutes.', bg: 'bg-rose-50', border: 'border-rose-200' },
   { icon: '📦', title: 'Order Tracking', desc: 'Track all orders and prescriptions from one dashboard.', bg: 'bg-orange-50', border: 'border-orange-200' },
 ];
@@ -138,6 +142,7 @@ const MedicineMarquee = () => (
 ═══════════════════════════════════════════════════ */
 const Landing = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const heroRef = useRef(null);
@@ -145,13 +150,28 @@ const Landing = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
+  const [showSavingsInfo, setShowSavingsInfo] = useState(false);
+  const [showBudgetCalc, setShowBudgetCalc] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('idle');
+  const [verifyStatus, setVerifyStatus] = useState('idle');
+  const [expandedReview, setExpandedReview] = useState(null);
   const [slangIndex, setSlangIndex] = useState(0);
   const [heroVisible, setHeroVisible] = useState(false);
 
   const savingsCount = useCounter(2840);
   const usersCount = useCounter(50000);
   const medsCount = useCounter(10000);
+
+  // Handle URL deep links for modals
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modal = params.get('modal');
+    if (modal === 'upload') {
+      setActiveModal('upload');
+      // Clean up URL without refreshing
+      window.history.replaceState({}, '', '/');
+    }
+  }, [location.search]);
 
   /* Slang rotator */
   useEffect(() => {
@@ -183,14 +203,26 @@ const Landing = () => {
     if (q.trim()) navigate(`/search?q=${encodeURIComponent(q)}`);
   };
 
-  const onFileChange = (e) => {
+  const onFileChange = (e, type = 'upload') => {
     const file = e.target.files[0];
     if (!file) return;
-    setUploadStatus('uploading');
-    setTimeout(() => {
-      setUploadStatus('done');
-      setTimeout(() => { setActiveModal(null); setUploadStatus('idle'); }, 2000);
-    }, 2800);
+    
+    if (type === 'verify') {
+      setVerifyStatus('verifying');
+      // Step 1: UI Feedback
+      setTimeout(() => setVerifyStatus('scanning_signature'), 800);
+      // Step 2: License DB check
+      setTimeout(() => setVerifyStatus('checking_database'), 1800);
+      // Step 3: Finalize
+      setTimeout(() => {
+        setVerifyStatus('done');
+      }, 3000);
+    } else {
+      setUploadStatus('uploading');
+      setTimeout(() => {
+        setUploadStatus('done');
+      }, 2800);
+    }
   };
 
   /* ── HERO ── */
@@ -214,9 +246,13 @@ const Landing = () => {
         .float-anim { animation: floatY 5s ease-in-out infinite; }
         @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         .shimmer-line { background: linear-gradient(90deg,transparent,rgba(244,165,34,0.25),transparent); background-size:200% 100%; animation:shimmer 2.5s infinite; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}</style>
 
-      <Navbar />
+
 
       {/* ══════════════════════════════════════
           HERO SECTION
@@ -238,12 +274,17 @@ const Landing = () => {
             {/* LEFT COLUMN */}
             <div className={`transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
 
-              {/* AI Savings badge */}
-              <div className="fade-up delay-1 inline-flex items-center gap-2.5 bg-[#F4A522]/10 border border-[#F4A522]/25 px-4 py-2 rounded-full mb-8">
-                <span className="text-[#F4A522] text-sm">🤖</span>
-                <span className="text-[#F4A522] font-black text-[10px] uppercase tracking-[0.18em] font-['Outfit']">
-                  AI-Powered · 40–80% Savings Guaranteed
-                </span>
+              {/* Premium AI Savings Badge */}
+              <div 
+                onClick={() => setShowSavingsInfo(true)}
+                className="fade-up delay-1 inline-flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-2xl mb-10 cursor-pointer hover:bg-white/20 hover:scale-105 hover:shadow-[0_0_30px_rgba(244,165,34,0.15)] transition-all duration-300 group">
+                <div className="w-8 h-8 rounded-lg bg-[#F4A522] flex items-center justify-center text-[#15342C] shadow-lg shadow-[#F4A522]/30 group-hover:rotate-12 transition-transform">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+                <div className="text-left">
+                  <p className="text-[#F4A522] font-black text-[9px] uppercase tracking-widest font-['Outfit'] mb-0.5">PharmaZone Intelligence</p>
+                  <p className="text-white font-bold text-xs font-['Inter']">40–80% Savings Guaranteed <span className="text-[#F4A522] underline underline-offset-4 decoration-2 ml-1">Learn How →</span></p>
+                </div>
               </div>
 
               {/* Headline with slang rotator */}
@@ -275,18 +316,27 @@ const Landing = () => {
                     onFocus={() => setShowSuggestions(true)}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search medicine — e.g. Dolo 650, Metformin..."
-                    className="w-full py-4 px-4 text-[15px] font-semibold text-[#15342C] placeholder:text-slate-400 focus:outline-none bg-transparent"
+                    className="w-full py-5 px-4 text-[15px] font-semibold text-[#15342C] placeholder:text-slate-400 focus:outline-none bg-transparent"
                   />
-                  <button type="submit"
-                    className="shrink-0 bg-[#15342C] hover:bg-[#1c4a3a] text-[#F4A522] px-7 py-4 font-black uppercase text-xs tracking-widest transition-colors font-['Outfit']">
-                    Search
-                  </button>
+                  <div className="flex shrink-0">
+                    <button 
+                      type="button"
+                      onClick={() => setShowBudgetCalc(true)}
+                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-4 py-5 flex items-center gap-2 border-l border-r border-slate-100 transition-colors">
+                      <span className="text-lg">⚖️</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest hidden sm:block">Budget Calc</span>
+                    </button>
+                    <button type="submit"
+                      className="bg-[#15342C] hover:bg-[#1c4a3a] text-[#F4A522] px-7 py-5 font-black uppercase text-xs tracking-widest transition-colors font-['Outfit']">
+                      Search
+                    </button>
+                  </div>
                 </form>
 
                 {/* Autocomplete */}
                 {showSuggestions && filteredSuggestions.length > 0 && (
-                  <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-slate-100 overflow-hidden z-[60]">
-                    <div className="px-5 py-3 bg-slate-50 border-b border-slate-100">
+                  <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-slate-100 z-[60] max-h-[320px] overflow-y-auto overflow-x-hidden custom-scrollbar">
+                    <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Trending Searches</span>
                     </div>
                     {filteredSuggestions.map((med, i) => (
@@ -304,6 +354,12 @@ const Landing = () => {
                         </svg>
                       </div>
                     ))}
+                    <div 
+                      onClick={() => setShowBudgetCalc(true)}
+                      className="p-4 bg-emerald-50 border-t border-emerald-100 flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-100 transition-colors sticky bottom-0">
+                      <span className="text-lg">⚖️</span>
+                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Open Budget Calculator</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -375,11 +431,6 @@ const Landing = () => {
                   <div className="text-[#15342C]/70 text-[10px] font-bold mt-0.5">Saved this month</div>
                 </div>
 
-                {/* Floating AI pill */}
-                <div className="absolute right-4 bottom-6 bg-violet-600 rounded-full shadow-lg px-4 py-2 z-20 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-violet-300 rounded-full animate-pulse" />
-                  <span className="text-white text-xs font-bold">AI Substitute Found</span>
-                </div>
               </div>
             </div>
           </div>
@@ -479,7 +530,12 @@ const Landing = () => {
               {FEATURES.map((f, i) => (
                 <div key={i}
                   className={`${f.bg} border ${f.border} rounded-[1.75rem] p-6 hover:-translate-y-1.5 hover:shadow-lg transition-all duration-300 cursor-pointer`}
-                  onClick={() => i < 2 ? navigate('/search') : i === 2 ? setActiveModal('upload') : null}>
+                  onClick={() => {
+                    if (i === 0 || i === 1) navigate('/search');
+                    else if (i === 3) setShowBudgetCalc(true);
+                    else if (i === 2) setActiveModal('upload');
+                    else if (i === 4) navigate('/consult');
+                  }}>
                   <div className="text-3xl mb-4">{f.icon}</div>
                   <h4 className="font-['Outfit'] font-black text-[#15342C] text-base mb-1.5">{f.title}</h4>
                   <p className="text-slate-500 text-xs leading-relaxed">{f.desc}</p>
@@ -511,7 +567,11 @@ const Landing = () => {
                   { icon: '📋', title: 'Digital Rx', desc: 'Your Medical Vault', type: 'rx', bg: 'bg-emerald-50', border: 'border-emerald-200', hover: 'hover:bg-[#15342C] hover:border-[#15342C]' },
                   { icon: '✅', title: 'Auto Verify', desc: 'Check Rx Authenticity', type: 'verify', bg: 'bg-violet-50', border: 'border-violet-200', hover: 'hover:bg-[#15342C] hover:border-[#15342C]' },
                 ].map((item, i) => (
-                  <div key={i} onClick={() => setActiveModal(item.type)}
+                  <div key={i} onClick={() => {
+                    if (item.type === 'consult') navigate('/consult');
+                    else if (item.type === 'rx') navigate('/dashboard?tab=prescriptions');
+                    else setActiveModal(item.type);
+                  }}
                     className={`p-8 ${item.bg} border ${item.border} rounded-[2rem] ${item.hover} transition-all cursor-pointer group hover:text-white hover:shadow-2xl`}>
                     <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">{item.icon}</div>
                     <h4 className="font-black font-['Outfit'] text-lg mb-1 text-[#15342C] group-hover:text-white transition-colors">{item.title}</h4>
@@ -550,7 +610,18 @@ const Landing = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-white/65 text-sm leading-relaxed font-['Inter']">"{t.text}"</p>
+                <div className="relative">
+                  <p className={`text-white/65 text-sm leading-relaxed font-['Inter'] ${expandedReview === i ? '' : 'line-clamp-2'}`}>
+                    "{t.text}"
+                  </p>
+                  {t.text.length > 60 && (
+                    <button 
+                      onClick={() => setExpandedReview(expandedReview === i ? null : i)}
+                      className="text-[#F4A522] text-[10px] font-black uppercase mt-2 hover:underline">
+                      {expandedReview === i ? 'Show Less' : 'Read More +'}
+                    </button>
+                  )}
+                </div>
                 <div className="flex gap-0.5 mt-5">
                   {[...Array(5)].map((_, j) => (
                     <svg key={j} className="w-3.5 h-3.5 fill-[#F4A522]" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
@@ -670,7 +741,7 @@ const Landing = () => {
       </footer>
 
       {/* ══════════════════════════════════════
-          MODALS (unchanged logic, refreshed UI)
+          MODALS
       ══════════════════════════════════════ */}
       {activeModal && (
         <div
@@ -709,13 +780,18 @@ const Landing = () => {
                     </>
                   )}
                   {uploadStatus === 'done' && (
-                    <>
-                      <div className="text-5xl mb-4">✅</div>
-                      <p className="font-bold text-emerald-600">Uploaded successfully!</p>
-                    </>
+                    <div className="fade-up">
+                      <div className="text-5xl mb-4 text-emerald-500">✅</div>
+                      <p className="font-bold text-emerald-600 text-lg mb-2">Prescription Confirmed!</p>
+                      <p className="text-slate-500 text-sm mb-6">Our AI has extracted the medicines. Would you like to view them or keep shopping?</p>
+                      <div className="flex gap-3 justify-center">
+                        <button onClick={() => navigate('/dashboard?tab=prescriptions')} className="bg-[#15342C] text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase">View in Vault</button>
+                        <button onClick={() => { setActiveModal(null); setUploadStatus('idle'); }} className="bg-slate-100 text-slate-600 px-5 py-2.5 rounded-xl text-xs font-black uppercase">Continue Shopping</button>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={onFileChange} />
+                <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => onFileChange(e, 'upload')} />
                 <p className="text-xs text-slate-400 text-center">Encrypted · HIPAA-compliant storage</p>
               </div>
             )}
@@ -723,33 +799,67 @@ const Landing = () => {
             {activeModal === 'consult' && (
               <div className="text-center">
                 <div className="text-5xl mb-5">👨‍⚕️</div>
-                <p className="text-slate-600 mb-6 leading-relaxed">Connect with a licensed doctor. Get a digital prescription within minutes.</p>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {['General Physician', 'Dermatologist', 'Diabetologist', 'Cardiologist'].map(sp => (
-                    <div key={sp} className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm font-bold text-slate-700 hover:border-[#F4A522] hover:bg-amber-50 cursor-pointer transition-all">{sp}</div>
+                <p className="text-slate-600 mb-6 leading-relaxed">How would you like to proceed with your consultation?</p>
+                <div className="space-y-3 mb-6">
+                  <div 
+                    onClick={() => setActiveModal(null)}
+                    className="p-4 bg-violet-50 border border-violet-100 rounded-2xl text-left cursor-pointer hover:border-violet-400 transition-all group">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-black text-[#15342C] text-sm">AI Health Bot</span>
+                      <span className="bg-violet-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Instant</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">Quick analysis, symptom check & generic advice.</p>
+                  </div>
+                  <div 
+                    onClick={() => navigate('/consult')}
+                    className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-left cursor-pointer hover:border-emerald-400 transition-all group">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-black text-[#15342C] text-sm">Human Specialist</span>
+                      <span className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Live · ₹199</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">Video call with a licensed doctor & digital Rx.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {['General Physician', 'Dermatologist'].map(sp => (
+                    <div key={sp} className="bg-slate-50 border border-slate-100 rounded-xl p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sp}</div>
                   ))}
                 </div>
-                <button onClick={() => { setActiveModal(null); navigate('/orders?tab=consultations'); }}
-                  className="w-full bg-[#15342C] text-white font-black py-4 rounded-2xl hover:bg-[#1c4a3a] transition-colors font-['Outfit']">
-                  Book Consultation →
-                </button>
               </div>
             )}
 
             {activeModal === 'rx' && (
               <div className="text-center">
                 <div className="text-5xl mb-5">📋</div>
-                <p className="text-slate-600 mb-6 leading-relaxed">All prescriptions stored safely. Access anytime, share with any doctor.</p>
-                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 mb-6 text-left">
-                  {['Encrypted storage', 'Share with doctors', 'Expiry reminders', 'Download anytime'].map(f => (
-                    <div key={f} className="flex items-center gap-3 text-sm text-slate-600 py-1.5">
-                      <span className="text-emerald-500 font-black">✓</span> {f}
+                <p className="text-slate-600 mb-6 leading-relaxed font-medium">Your Medical Vault</p>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Recently Scanned</div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center text-sm">📄</div>
+                        <div>
+                          <p className="text-xs font-bold text-[#15342C]">Dr. S. K. Gupta</p>
+                          <p className="text-[9px] text-slate-400">14-Apr-2024 · 3 Medicines</p>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-md uppercase">Verified</span>
                     </div>
-                  ))}
+                    <div className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl opacity-60 grayscale">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-sm">📄</div>
+                        <div>
+                          <p className="text-xs font-bold text-[#15342C]">Max Hospital</p>
+                          <p className="text-[9px] text-slate-400">02-Mar-2024 · 5 Medicines</p>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-md uppercase">Archived</span>
+                    </div>
+                  </div>
                 </div>
-                <button onClick={() => { setActiveModal(null); navigate('/orders'); }}
-                  className="w-full bg-[#15342C] text-white font-black py-4 rounded-2xl hover:bg-[#1c4a3a] transition-colors font-['Outfit']">
-                  View My Prescriptions →
+                <button onClick={() => { setActiveModal(null); navigate('/dashboard?tab=prescriptions'); }}
+                  className="w-full bg-[#15342C] text-white font-black py-4 rounded-2xl hover:bg-[#1c4a3a] transition-colors font-['Outfit'] shadow-lg shadow-[#15342C]/20">
+                  Open Complete Vault →
                 </button>
               </div>
             )}
@@ -758,23 +868,157 @@ const Landing = () => {
               <div className="text-center">
                 <div className="text-5xl mb-5">✅</div>
                 <p className="text-slate-600 mb-6 leading-relaxed">Upload any prescription and AI verifies authenticity, doctor license, and expiry in seconds.</p>
-                <div
-                  className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 mb-6 cursor-pointer hover:border-[#F4A522] hover:bg-amber-50 transition-all"
-                  onClick={() => fileInputRef.current?.click()}>
-                  <p className="font-bold text-slate-700">📎 Upload Rx for verification</p>
-                  <p className="text-sm text-slate-400 mt-1">AI-powered authenticity check</p>
-                </div>
-                <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={onFileChange} />
+                {verifyStatus === 'idle' && (
+                  <div
+                    className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 mb-6 cursor-pointer hover:border-[#F4A522] hover:bg-amber-50 transition-all"
+                    onClick={() => fileInputRef.current?.click()}>
+                    <p className="font-bold text-slate-700">📎 Upload Rx for verification</p>
+                    <p className="text-sm text-slate-400 mt-1">AI-powered authenticity check</p>
+                  </div>
+                )}
+                {verifyStatus === 'verifying' && (
+                  <div className="py-10">
+                    <div className="w-12 h-12 border-4 border-violet-500 border-t-transparent animate-spin rounded-full mx-auto mb-4" />
+                    <p className="font-bold text-violet-700">Analyzing Prescription OCR...</p>
+                  </div>
+                )}
+                {verifyStatus === 'scanning_signature' && (
+                  <div className="py-10">
+                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent animate-spin rounded-full mx-auto mb-4" />
+                    <p className="font-bold text-emerald-700">Scanning Digital Signature...</p>
+                  </div>
+                )}
+                {verifyStatus === 'checking_database' && (
+                  <div className="py-10">
+                    <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent animate-spin rounded-full mx-auto mb-4" />
+                    <p className="font-bold text-amber-600">Checking NMC/MCI Registry...</p>
+                  </div>
+                )}
+                {verifyStatus === 'done' && (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 mb-6 text-left fade-up">
+                    <div className="flex items-center gap-3 text-emerald-600 font-bold mb-4">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      Verified Authenticity
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">Doctor License Status:</span>
+                        <span className="text-emerald-600 font-black">ACTIVE</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">License Expiry:</span>
+                        <span className="text-[#15342C] font-black italic">28-Aug-2028</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">Digital Signature:</span>
+                        <span className="text-emerald-600 font-black">VALIDATE ✓</span>
+                      </div>
+                      <div className="pt-3 border-t border-emerald-100 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[#F4A522]">
+                        <span>Reg No: MCI-84920-RJ</span>
+                        <span>Dr. S. K. Gupta</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => onFileChange(e, 'verify')} />
                 <div className="grid grid-cols-3 gap-3 text-xs">
                   {['Doctor License', 'Expiry Date', 'Digital Signature'].map(c => (
                     <div key={c} className="bg-violet-50 border border-violet-100 text-violet-700 font-bold rounded-xl p-2">{c}</div>
                   ))}
                 </div>
+                {verifyStatus === 'done' && (
+                  <button 
+                    onClick={() => { setVerifyStatus('idle'); setActiveModal(null); }}
+                    className="w-full mt-6 bg-[#15342C] text-white py-3 rounded-xl font-black uppercase tracking-widest">Done</button>
+                )}
               </div>
             )}
           </div>
         </div>
       )}
+
+      {/* ═══ PREMIUM SAVINGS EXPLANATION MODAL ═══════════════════════ */}
+      {showSavingsInfo && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#15342C]/40 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl relative overflow-hidden border border-white/20 animate-in zoom-in-95 duration-300 font-['Outfit']">
+            {/* Design Elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-50 rounded-full blur-3xl -ml-24 -mb-24"></div>
+
+            <button 
+              onClick={() => setShowSavingsInfo(false)} 
+              className="absolute top-8 right-8 w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-[#15342C] hover:text-white transition-all z-10 transition-colors">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+
+            <div className="p-10 md:p-14 relative z-0">
+              <div className="inline-flex items-center gap-2 bg-[#F4A522]/10 text-[#F4A522] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-[#F4A522]/20">
+                <span className="w-1.5 h-1.5 bg-[#F4A522] rounded-full animate-pulse"></span>
+                Generic Intelligence Protocol
+              </div>
+              <h2 className="text-4xl font-black text-[#15342C] font-['Outfit'] mb-6 leading-tight">
+                How we save you <br/>
+                <span className="text-emerald-600">40% to 80% every day.</span>
+              </h2>
+              <p className="text-slate-500 font-medium font-['Inter'] mb-10 leading-relaxed text-sm">
+                Medicine prices vary significantly between brands, even when the active ingredient (salt) is identical. Our AI identifies identical molecules at a fraction of the cost.
+              </p>
+
+              {/* Price Comparison Grid */}
+              <div className="bg-slate-50 rounded-3xl p-8 mb-10 border border-slate-100">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 uppercase tracking-widest">Comparative Analysis: Paracetamol 650mg</p>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-black text-[#15342C]">Top Branded Tablet</p>
+                      <p className="text-[11px] text-slate-400 font-bold uppercase italic">Heavy Marketing & Brand Tax</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-rose-500">₹32.00</p>
+                      <p className="text-[9px] text-rose-400 font-black tracking-widest uppercase">Per Strip</p>
+                    </div>
+                  </div>
+                  <div className="h-px bg-slate-200/50"></div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-emerald-700">Generic Alternative</p>
+                        <p className="text-[11px] text-emerald-500 font-bold uppercase font-['Inter']">Same Salt · Same Effect</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-emerald-600">₹6.40</p>
+                      <p className="text-[9px] text-emerald-400 font-black tracking-widest uppercase">PharmaZone Verified</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex-shrink-0 flex items-center justify-center text-xl shadow-inner">🔬</div>
+                  <div>
+                    <h4 className="font-black text-[#15342C] text-sm font-['Outfit'] mb-1">Quality Guaranteed</h4>
+                    <p className="text-slate-400 text-[10px] leading-relaxed font-['Inter'] font-medium">All generics are DCGI approved and sourced from WHO-GMP certified facilities.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 flex-shrink-0 flex items-center justify-center text-xl shadow-inner">👨‍⚕️</div>
+                  <div>
+                    <h4 className="font-black text-[#15342C] text-sm font-['Outfit'] mb-1">Doctor Verified</h4>
+                    <p className="text-slate-400 text-[10px] leading-relaxed font-['Inter'] font-medium">Our clinical team verifies every substitute to ensure 100% molecular matches.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Budget Calculator Modal */}
+      {showBudgetCalc && <BudgetCalculator onClose={() => setShowBudgetCalc(false)} />}
     </div>
   );
 };

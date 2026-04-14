@@ -62,14 +62,27 @@ const Orders = () => {
     setLoading(true);
     try {
       if (activeTab === 'orders') {
+        let localOrders = [];
+        try {
+          localOrders = JSON.parse(localStorage.getItem('pharmazone_orders')) || [];
+        } catch { localOrders = []; }
+
         const res = await api.get(`/orders/customer/${user.userId || user.id}`);
-        setOrders(res.data?.length > 0 ? res.data : MOCK_ORDERS);
+        // Combine API orders with local demo orders
+        const combined = [...localOrders, ...(res.data?.length > 0 ? res.data : MOCK_ORDERS)];
+        // Remove duplicates if same ID exists
+        const unique = Array.from(new Map(combined.map(o => [o.id, o])).values());
+        setOrders(unique);
       } else {
         const res = await api.get(`/prescriptions/customer/${user.userId || user.id}`);
         setPrescriptions(res.data?.length > 0 ? res.data : MOCK_PRESCRIPTIONS);
       }
     } catch {
-      if (activeTab === 'orders') setOrders(MOCK_ORDERS);
+      // Fallback to local + mock
+      if (activeTab === 'orders') {
+        let lo = []; try { lo = JSON.parse(localStorage.getItem('pharmazone_orders')) || []; } catch { lo = []; }
+        setOrders([...lo, ...MOCK_ORDERS]);
+      }
       else setPrescriptions(MOCK_PRESCRIPTIONS);
     } finally {
       setLoading(false);

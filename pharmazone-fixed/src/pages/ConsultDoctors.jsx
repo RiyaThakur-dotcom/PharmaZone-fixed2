@@ -29,6 +29,7 @@ const ConsultDoctors = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedSpecialty, setSelectedSpecialty] = useState(null);
+  const [consultMode, setConsultMode] = useState('specialist'); // 'ai' | 'specialist'
   const [symptoms, setSymptoms] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -40,6 +41,7 @@ const ConsultDoctors = () => {
       return;
     }
     setSelectedSpecialty(specialty);
+    setConsultMode('specialist'); // Default
     setShowModal(true);
   };
 
@@ -203,11 +205,34 @@ const ConsultDoctors = () => {
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-emerald-600 text-xs font-bold flex items-center gap-1">
                         <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                        Wait: {selectedSpecialty.waitTime}
+                        Status: Online
                       </span>
-                      <span className="text-[#F4A522] font-black text-sm">₹{selectedSpecialty.fee}</span>
+                      <span className="text-[#F4A522] font-black text-sm">Fee: ₹{selectedSpecialty.fee}</span>
                     </div>
                   </div>
+                </div>
+
+                <div className="flex gap-3 mb-8">
+                  <button 
+                    onClick={() => setConsultMode('ai')}
+                    className={`flex-1 p-4 rounded-2xl border-2 transition-all ${consultMode === 'ai' ? 'border-[#F4A522] bg-amber-50 shadow-inner' : 'border-slate-100 bg-white'}`}>
+                    <div className="text-xl mb-1">🤖</div>
+                    <p className="font-bold text-[#15342C] text-xs">AI Assistant</p>
+                    <p className="text-[9px] text-slate-400 uppercase font-black">Instant · Free</p>
+                  </button>
+                  <button 
+                    onClick={() => setConsultMode('specialist')}
+                    className={`flex-1 p-4 rounded-2xl border-2 transition-all ${consultMode === 'specialist' ? 'border-[#F4A522] bg-amber-50 shadow-inner' : 'border-slate-100 bg-white'}`}>
+                    <div className="text-xl mb-1">👨‍⚕️</div>
+                    <p className="font-bold text-[#15342C] text-xs">Real Doctor</p>
+                    <p className="text-[9px] text-slate-400 uppercase font-black">5-10m wait · Verified</p>
+                  </button>
+                </div>
+
+                <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[10px] text-slate-400 leading-relaxed">
+                  {consultMode === 'ai' 
+                    ? "Our AI analyzes symptoms using clinical datasets for instant preliminary guidance."
+                    : "Connect with a verified NMC/MCI registered specialist for a detailed evaluation & digital prescription."}
                 </div>
 
                 <form onSubmit={handleSubmit}>

@@ -1,54 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /* ─────────────────────────────────────────────────────────
    ChatBot.jsx — PharaFriend AI
-   Improvements:
-   - Richer system prompt with medicine/pricing context
-   - Suggested questions dynamically update per conversation
-   - Medicine search shortcut from chat
-   - Typing indicator is smoother
-   - Message timestamps
-   - Clear chat button
-   - Context-aware quick replies that evolve
 ───────────────────────────────────────────────────────── */
 
-const SYSTEM_PROMPT = `You are PharaFriend, the smart AI health assistant for PharmaZone — India's #1 cross-platform medicine price comparison app.
+const SYSTEM_PROMPT = `You are PharaFriend, the ultra-smart AI health assistant for PharmaZone.
 
-YOUR CORE KNOWLEDGE:
-- PharmaZone compares medicine prices across 1mg, PharmEasy, Netmeds, Apollo247, MedPlus
-- We show real-time prices, discounts, delivery timelines, and stock availability
-- We have an AI-powered substitute finder — same salt/molecule, lower price
-- We have prescription upload + OCR feature to extract medicine lists from photos
-- We have doctor consultation booking (online, with digital prescription)
-- Users can track orders and prescriptions in their dashboard
-- Average savings: 40-80% when switching to generic equivalents
+CORE CAPABILITIES:
+- Compare medicine prices across 1mg, PharmEasy, Netmeds, Apollo247, and MedPlus.
+- Find 100% molecularly identical substitutes (Generics) that save 40-80%.
+- Explain salt compositions and safety advice.
+- Handle multi-language chat (Hindi, English, Hinglish).
 
-TABLET BUDGET CALCULATOR (NEW FEATURE):
-- On the medicine detail page, users can enter their budget (e.g. ₹200)
-- Set tablets per strip (10/15/20/30)
-- The table instantly shows how many tablets they can get from each platform
-- E.g. "With ₹200 on 1mg (₹16/strip, 10 tabs each) = 12 strips = 120 tablets"
-
-RESPONSE RULES:
-- Keep responses under 3-4 sentences. Be crisp.
-- Use friendly Hinglish naturally (mix Hindi + English like Indians actually speak)
-- For medicine queries: always mention generic = same salt = cheaper option
-- For pricing: mention the Budget Calculator feature if relevant
-- For serious symptoms: ALWAYS say "Doctor se zaroor milna, main sirf prices compare karta hoon"
-- Never diagnose. Never recommend stopping prescribed medicines.
-- End every response with ONE actionable suggestion (search, use calculator, consult doctor, etc.)
-- Use 1-2 emojis max per message
-
-QUICK EXAMPLES:
-User: "Dolo 650 kitne ka hai?"
-Reply: "Dolo 650 abhi 1mg pe ₹14/strip se milta hai — sabse sasta! 💊 Generic option 'Calpol' same paracetamol hai, aur bhi sasta. Budget calculator use karo — batao ₹200 mein kitne tablets chahiye?"
-
-User: "Generic medicine safe hai kya?"
-Reply: "Bilkul! Generic = same molecule, same dose, same effect — bas alag brand name. India mein DCGI approved hoti hain. 40-80% savings possible hai bhai. 🎯 PharmaZone pe koi bhi medicine search karo, substitutes section check karo."`;
+CONVERSATIONAL RULES:
+1. GREETINGS: Always respond warmly to 'Hi', 'Hello', 'Kaise ho?', etc.
+2. INTERACTIVE: Start with a greeting and ask how you can help.
+3. MEDICINE INFO: Provide details for any medicine name given.
+4. ACTIONABLE: Suggest a next step (search, compare, or generic).
+`;
 
 const INITIAL_MESSAGES = [
   {
-    text: "Hey! Main hoon PharaFriend 👋 — aapka smart medicine saving buddy!\n\nSearch karo, prices compare karo, ya budget mein kitni tablets milegi — sab bataunga. Kya chahiye?",
+    text: "Namaste! 👋 I'm PharaFriend, your AI health assistant. \n\nHello, how are you? Main aapki medicines dhoondhne aur paise bachane mein madad kar sakta hoon. How can I assist you today?",
     type: 'bot',
     time: new Date(),
   }
@@ -56,22 +30,22 @@ const INITIAL_MESSAGES = [
 
 const QUICK_REPLY_SETS = {
   initial: [
+    "Hi! Kaise ho?",
     "Dolo 650 ka generic?",
-    "Sasti medicine kaise dhundhe?",
-    "Budget calculator kaise use karo?",
-    "Prescription upload karna hai 📋",
+    "Sasti medicine kaise milegi?",
+    "Prescription upload 📋",
   ],
   medicine: [
-    "Iska substitute kya hai?",
-    "₹200 mein kitni tablets?",
-    "Cheapest platform kaun sa?",
-    "Doctor se consult karna hai",
+    "Iska substitute dikhao",
+    "₹200 mein kitne tablets?",
+    "Sabse sasta platform?",
+    "Doctor se baat karni hai",
   ],
   generic: [
     "Generic safe hai kya?",
     "Doctor approve karega?",
-    "Kahan milega generic?",
-    "Aur koi savings tip?",
+    "Kahan se sasta milega?",
+    "Savings tips?"
   ],
 };
 
@@ -80,7 +54,9 @@ const formatTime = (date) => {
 };
 
 const ChatBot = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [language, setLanguage] = useState('en'); // 'en' | 'hi'
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
@@ -132,7 +108,7 @@ const ChatBot = () => {
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 400,
-          system: SYSTEM_PROMPT,
+          system: `${SYSTEM_PROMPT}\nUSER PREFERRED LANGUAGE: ${language === 'hi' ? 'Hindi/Hinglish' : 'English'}`,
           messages: history,
         }),
       });
@@ -146,18 +122,56 @@ const ChatBot = () => {
       // Smart offline fallback
       const q = lower;
       let reply;
-      if (q.includes('dolo') || q.includes('paracetamol') || q.includes('fever'))
-        reply = "Dolo 650 = Paracetamol 650mg. Generic alternative: Calpol, Metacin — same kaam, 50-60% sasta! 💊 1mg pe abhi ₹14/strip. Budget calculator use karo — batao budget, main tablets count bataata hoon.";
+      if (q.includes('hi') || q.includes('hello') || q.includes('hey') || q.includes('namaste'))
+        reply = "Hello! 👋 Kaise hain aap? I'm PharaFriend, your medicine saving buddy. Generic medicines search karke 80% tak paise bachayein. How can I help you today?";
+      else if (q.includes('how are you') || q.includes('kaise ho') || q.includes('kya hal'))
+        reply = "Main bilkul theek hoon, thank you! 😊 Aap bataiye, aaj PharmaZone pe sasti medicine dhoondhne mein main aapki kya madad kar sakta hoon?";
+      else if (q.includes('dolo') || q.includes('paracetamol') || q.includes('fever'))
+        return setMessages(prev => [...prev, { 
+          text: "Dolo 650 = Paracetamol 650mg. Sabse sasta deal 1mg pe hai.", 
+          type: 'bot', 
+          time: new Date(),
+          card: { 
+            name: 'Dolo 650mg (15 Tab)', 
+            salt: 'Paracetamol 650mg',
+            prices: [
+              { store: '1mg', price: '₹14.20', status: 'cheapest' },
+              { store: 'PhEasy', price: '₹18.50' },
+              { store: 'Apollo', price: '₹22.00' }
+            ]
+          },
+          action: { label: '💊 Show Substitutes', link: '/search?q=Paracetamol' }
+        }]);
       else if (q.includes('budget') || q.includes('calculator') || q.includes('tablet'))
-        reply = "Budget Calculator use karo! 🎯 Medicine detail page pe ₹ enter karo → har platform ka tablet count automatically aata hai. Jaise ₹200 mein 1mg = 120 tablets, Netmeds = 90 tablets.";
+        return setMessages(prev => [...prev, { 
+          text: "Budget Calculator se aap jaan sakte hain ki apne budget mein kitni tablets milengi.", 
+          type: 'bot', 
+          time: new Date(),
+          action: { label: '⚖️ Open Calculator', link: '/search' }
+        }]);
       else if (q.includes('generic') || q.includes('substitute') || q.includes('same salt'))
-        reply = "Generic = same active molecule, same dose, DCGI approved — bas cheaper brand! ✅ Average 40-80% savings. Search mein medicine dhundo → Substitutes tab check karo — doctor-verified alternatives milenge.";
+        return setMessages(prev => [...prev, { 
+          text: "Generic medicines branded se 80% tak sasti hoti hain aur medical performance same hoti hai.", 
+          type: 'bot', 
+          time: new Date(),
+          action: { label: '💊 Search Generics', link: '/search' }
+        }]);
       else if (q.includes('prescription') || q.includes('upload'))
-        reply = "Prescription upload karo — AI har medicine extract kar deta hai! 📄 Home page → Smart Upload tap karo. Phir direct search ya compare.";
+        return setMessages(prev => [...prev, { 
+          text: "Prescription upload karke aap turant sasti medicines list dekh sakte hain.", 
+          type: 'bot', 
+          time: new Date(),
+          action: { label: '📤 Upload Now', link: '/?modal=upload' }
+        }]);
       else if (q.includes('doctor') || q.includes('consult'))
-        reply = "Online consultation available hai! 👨‍⚕️ Orders page → Consultations tab. ₹199 mein General Physician, digital prescription milegi minutes mein.";
+        return setMessages(prev => [...prev, { 
+          text: "Aap hamare licensed doctors se online consult kar sakte hain ₹199 mein.", 
+          type: 'bot', 
+          time: new Date(),
+          action: { label: '👨‍⚕️ Book Consult', link: '/consult' }
+        }]);
       else
-        reply = "Network thoda slow hai 😅 PharmaZone pe medicine search karo — live prices, generics, aur budget calculator sab milega! Koi specific medicine batao?";
+        reply = "Main samjha nahi, par main PharmaZone pe medicine search, price compare aur saste alternatives dhoondhne mein help kar sakta hoon. 🤖 Koi medicine ka naam bataiye?";
 
       setMessages(prev => [...prev, { text: reply, type: 'bot', time: new Date() }]);
     } finally {
@@ -166,7 +180,8 @@ const ChatBot = () => {
   };
 
   const clearChat = () => {
-    setMessages(INITIAL_MESSAGES);
+    // We send a new array reference to ensure React detects the change and re-renders
+    setMessages([...INITIAL_MESSAGES]);
     setQuickSet('initial');
   };
 
@@ -178,10 +193,12 @@ const ChatBot = () => {
       {/* ── TRIGGER BUTTON ── */}
       <button
         onClick={() => setIsOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-[200] w-14 h-14 rounded-full bg-[#15342C] shadow-[0_8px_30px_rgba(21,52,44,0.4)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200">
-        <span className={`transition-all duration-200 ${isOpen ? 'rotate-45 scale-110' : 'rotate-0'}`}>
+        className={`fixed bottom-6 right-6 z-[200] w-14 h-14 rounded-full bg-[#15342C] shadow-[0_8px_40px_rgba(21,52,44,0.4)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 group ${!isOpen ? 'animate-bounce' : ''}`}
+        style={{ animationDuration: '3s' }}>
+        <div className={`absolute inset-0 rounded-full bg-[#F4A522] opacity-20 scale-110 blur-md ${!isOpen ? 'animate-pulse' : 'hidden'}`} />
+        <span className={`relative z-10 transition-all duration-300 ${isOpen ? 'rotate-45 scale-110' : 'rotate-0'}`}>
           {isOpen
-            ? <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            ? <svg className="w-6 h-6 text-[#F4A522]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             : <div className="relative">
                 <span className="text-2xl">💊</span>
                 {unread > 0 && (
@@ -198,18 +215,35 @@ const ChatBot = () => {
       {/* ── CHAT PANEL ── */}
       <div className={`fixed bottom-24 right-6 z-[199] ${chatWidth} ${chatHeight} flex flex-col bg-white rounded-[24px] shadow-[0_20px_70px_rgba(0,0,0,0.18)] border border-slate-100 overflow-hidden transition-all duration-300 origin-bottom-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}>
 
+        {/* Toggle Language */}
+        <div className="bg-[#1c4a3a] px-6 py-2 flex items-center justify-between border-b border-white/5">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#F4A522]">Assistant Language</span>
+          <div className="flex gap-2">
+            {['en', 'hi'].map(l => (
+              <button 
+                key={l}
+                onClick={() => setLanguage(l)}
+                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded transition-colors ${language === l ? 'bg-[#F4A522] text-[#15342C]' : 'bg-white/10 text-white/40'}`}>
+                {l === 'en' ? 'English' : 'हिंदी'}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Header */}
-        <div className="bg-[#15342C] px-5 py-4 flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-full bg-[#F4A522] flex items-center justify-center text-xl shrink-0">💊</div>
+        <div className="bg-[#15342C] px-5 py-5 flex items-center gap-3 shrink-0 relative overflow-hidden">
+          {/* Animated background gradient */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-[#F4A522] to-emerald-500 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+          
+          <div className="w-10 h-10 rounded-full bg-[#F4A522] flex items-center justify-center text-xl shrink-0 shadow-lg shadow-[#F4A522]/20 animate-pulse">💊</div>
           <div className="flex-1 min-w-0">
-            <p className="font-black text-white font-['Outfit'] text-sm">PharaFriend AI</p>
+            <p className="font-black text-white font-['Outfit'] text-sm tracking-wide">PharaFriend AI</p>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shrink-0" />
               <span className="text-emerald-300/80 text-xs font-medium truncate">Powered by Claude · Hinglish ready</span>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {/* Expand toggle */}
             <button
               onClick={() => setIsExpanded(e => !e)}
               className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white/60 hover:text-white"
@@ -221,7 +255,6 @@ const ChatBot = () => {
                 }
               </svg>
             </button>
-            {/* Clear */}
             <button
               onClick={clearChat}
               className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white/60 hover:text-white"
@@ -247,6 +280,34 @@ const ChatBot = () => {
                     : 'bg-white text-slate-700 rounded-bl-sm shadow-sm border border-slate-100'
                 }`}>
                   {msg.text}
+                  {msg.card && (
+                    <div className="mt-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 overflow-hidden relative">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#F4A522]/5 rounded-full -mr-12 -mt-12 blur-xl" />
+                      <div className="relative z-10">
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Live Comparison</p>
+                        <h4 className="font-black text-[#15342C] text-sm mb-0.5">{msg.card.name}</h4>
+                        <p className="text-[10px] text-slate-400 font-bold mb-4">{msg.card.salt}</p>
+                        <div className="space-y-2">
+                          {msg.card.prices.map((p, ix) => (
+                            <div key={ix} className="flex justify-between items-center text-xs">
+                              <span className="text-slate-500 font-medium">{p.store}</span>
+                              <div className="text-right">
+                                <span className={`font-black ${p.status === 'cheapest' ? 'text-emerald-600' : 'text-[#15342C]'}`}>{p.price}</span>
+                                {p.status === 'cheapest' && <span className="ml-1 text-[8px] bg-emerald-500 text-white px-1 py-0.5 rounded font-black">LOWEST</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {msg.action && (
+                    <button 
+                      onClick={() => navigate(msg.action.link)}
+                      className="mt-3 w-full bg-[#15342C] text-[#F4A522] py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#1c4a3a] transition-all shadow-md active:scale-95">
+                      {msg.action.label}
+                    </button>
+                  )}
                 </div>
                 {msg.time && (
                   <div className={`text-[10px] text-slate-400 mt-1 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
